@@ -51,4 +51,3 @@
 
 </div>
 
-Cab u edit thus so that the job tracjer heading says hure inventory using emohis or gufs butlooks more redable
