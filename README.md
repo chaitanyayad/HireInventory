@@ -23,7 +23,7 @@
 
 <br/>
 
-> * Check back soon."*
+>"Check back soon."
 
 <br/>
 
