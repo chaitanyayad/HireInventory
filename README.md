@@ -23,7 +23,7 @@
 
 <br/>
 
-> *"Great things take time. Check back soon."*
+> * Check back soon."*
 
 <br/>
 
