@@ -2,8 +2,13 @@
 from fastapi import FastAPI
 from sqlalchemy import text
 from app.database import engine
+from app.database import Base, engine
+from app.models import User, JobApplication
+
 
 app = FastAPI(title = "Job Tracker API")
+
+
 
 @app.on_event("startup")
 def verify_db_connection():
