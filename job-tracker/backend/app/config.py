@@ -2,10 +2,15 @@
 
 from pydantic_settings import BaseSettings
 
-class Settings(BaseSettings):
-    DATABASE_URL: str
+class Settings(BaseSettings):#reading from env file instead of validating python code like BaseModel does also for API_KEY SECRET_KEY DATABASE_URL REDIS_URL
 
-    class Config:
+    DATABASE_URL: str
+    """
+    BaseSettings enables reading configuration from environment sources.
+    Config tells it which environment sources to use.
+    BaseSettings is programmed to look for a nested class named Config.
+    """
+    class Config: #tell pydanhtic to look for databse_url in env file 
         env_file = ".env"
 
 settings = Settings()
