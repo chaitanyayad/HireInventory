@@ -16,3 +16,5 @@ class User(Base):
 
     # backref lets you do application.owner and get the user
     applications = relationship("JobApplication", back_populates="owner", cascade="all, delete")
+
+    #modela and schema are different in the sennse that model is the database representation of the user and schema is the representation of the user in the API. The schema is used to validate the data that is sent to the API and to serialize the data that is sent back to the client. The model is used to interact with the database.
