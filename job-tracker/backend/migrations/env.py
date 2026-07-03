@@ -20,7 +20,9 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
-
+"""
+just havinf sql alchemy models doesnt create tables in the database. We need to run alembic migrations to create tables in the database. Alembic is a database migration tool for SQLAlchemy. It is used to manage database schema changes.
+"""
 
 def run_migrations_offline() -> None:
     url = settings.DATABASE_URL
