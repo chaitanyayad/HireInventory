@@ -1,14 +1,14 @@
-import bycrypt
-from app.models import User
-from app.schmemas import UserCreate
+import bcrypt
+from app.models.user import User
+from app.schemas.user import UserCreate
 from sqlalchemy.orm import Session
 
 def hash_password(plain_password: str) -> str:
-    salt = bycrypt.gensalt()
-    return bycrypt.hashpw(plain_password.encode() , salt).decode()
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(plain_password.encode() , salt).decode()
 
-def verify_password(plain_password : str , hashed_password : str) ->bool
-    return bycrypt.checkpw(plain_password.encode() , hashed_password.encode())
+def verify_password(plain_password : str , hashed_password : str) ->bool:
+    return bcrypt.checkpw(plain_password.encode() , hashed_password.encode())
 """
 Inside checkpw()
 yo byrcypt is neat it got that shit on
@@ -36,7 +36,7 @@ def get_user_by_email(db : session , email : str) -> User | None:
     return db.query(User).filter(User.email == email).first()
 
 
-def create_User(db : Session , user_data : UserCreate) ->User
+def create_User(db : Session , user_data : UserCreate) ->User:
     db_user = User(email = user_data.email , hashed_password = hash_password(user_data.password))
     db.add(db_user)
     db.commit()
