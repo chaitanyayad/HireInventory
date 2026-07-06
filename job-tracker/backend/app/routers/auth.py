@@ -488,7 +488,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 def login(credentials : UserLogin , db : Session = Depends(get_db)):
         user = get_user_by_email(db , credentials.email)
         if not user or not verify_password(credentials.password , user.hashed_password):
-                raise HTTPException(status_code = "401" , detail = "Incorrect email or password")
+                raise HTTPException(status_code = 401 , detail = "Incorrect email or password")
         token = create_access_token(data = {"sub" : str(user.id)})
         return Token(access_token = token)
 
