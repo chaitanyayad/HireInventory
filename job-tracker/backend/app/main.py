@@ -24,3 +24,4 @@ def verify_db_connection():
 @app.get("/ping")
 def ping():
     return {"message": "pong"}
+

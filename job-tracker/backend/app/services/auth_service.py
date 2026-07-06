@@ -2,6 +2,9 @@ import bcrypt
 from app.models.user import User
 from app.schemas.user import UserCreate
 from sqlalchemy.orm import Session
+from datetime import datetime, timedelta , timezone
+from jose import jwt
+from app.config import settings
 
 def hash_password(plain_password: str) -> str:
     salt = bcrypt.gensalt()
@@ -32,7 +35,7 @@ and then we parse the hased password along with plain passwrod after encdign the
 
 """
 
-def get_user_by_email(db : session , email : str) -> User | None:
+def get_user_by_email(db : Session , email : str) -> User | None:
     return db.query(User).filter(User.email == email).first()
 
 
@@ -42,6 +45,12 @@ def create_User(db : Session , user_data : UserCreate) ->User:
     db.commit()
     db.refresh(db_user)
     return db_user
+
+def create_access_token(data : dict ) -> str:
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(minutes = settings.JWT_Expiration_Time)
+    to_encode.update({"exp" : expire})
+    return jwt.encode(to_encode , settings.JWT_Secret_Key , algorithm = settings.JWT_Algorithm )# postional arguments can be passed as keyword not the other way around
 
     """
 

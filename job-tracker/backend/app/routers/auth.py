@@ -1,17 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.schemas.user import UserCreate, UserResponse
-from app.services.auth_service import create_User, get_user_by_email
-
-router = APIRouter(prefix="/auth", tags=["auth"])
-
-@router.post("/register", response_model=UserResponse, status_code=201)
-def register(user_data: UserCreate, db: Session = Depends(get_db)):
-    if get_user_by_email(db, user_data.email):
-        raise HTTPException(status_code=400, detail="Email already registered")
-    return create_User(db, user_data)
-
+from app.schemas.user import UserCreate, UserResponse , Token , UserLogin
+from app.services.auth_service import create_User, get_user_by_email , create_access_token , verify_password
 
 """
 
@@ -483,3 +474,21 @@ A typical FastAPI backend has three layers:
 * **SQLAlchemy models** define what is stored in the database.
 * **Route functions and services** transform data between those two worlds while applying business logic.
 """
+
+router = APIRouter(prefix="/auth", tags=["auth"])
+
+@router.post("/register", response_model=UserResponse, status_code=201)
+def register(user_data: UserCreate, db: Session = Depends(get_db)):
+    if get_user_by_email(db, user_data.email):
+        raise HTTPException(status_code=400, detail="Email already registered")
+    return create_User(db, user_data)
+
+
+@router.post("/login" , response_model =Token , status_code = 201)
+def login(credentials : UserLogin , db : Session = Depends(get_db)):
+        user = get_user_by_email(db , credentials.email)
+        if not user or not verify_password(credentials.password , user.hashed_password):
+                raise HTTPException(status_code = "401" , detail = "Incorrect email or password")
+        token = create_access_token(data = {"sub" : str(user.id)})
+        return Token(access_token = token)
+
