@@ -1,10 +1,19 @@
 import bcrypt
 from app.models.user import User
 from app.schemas.user import UserCreate
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Depends
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta , timezone
-from jose import jwt
+from jose import jwt , JWTError
 from app.config import settings
+from app.database import get_db
+
+# Knows how to pull the token out of the "Authorization: Bearer ..." header.
+# tokenUrl is ONLY for the /docs "Authorize" button — it points at your login
+# route, it does not create it
+Bearer_Extracter = HTTPBearer()
 
 def hash_password(plain_password: str) -> str:
     salt = bcrypt.gensalt()
@@ -52,6 +61,26 @@ def create_access_token(data : dict ) -> str:
     to_encode.update({"exp" : expire})
     return jwt.encode(to_encode , settings.JWT_Secret_Key , algorithm = settings.JWT_Algorithm )# postional arguments can be passed as keyword not the other way around
 
+def get_current_user(creds : HTTPAuthorizationCredentials = Depends(Bearer_Extracter ) , db : Session = Depends(get_db)) ->User :
+    credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,  detail="Could not validate credentials",headers={"WWW-Authenticate": "Bearer"},
+    )
+    token = creds.credentials
+    try:
+        payload = jwt.decode(token , settings.JWT_Secret_Key , algorithms = [settings.JWT_Algorithm])#[] is used because multiple algos are allowed this helps library check whetehr the algo present in header should be allowed. Also jwt.decode() returns only the payload (claims), not the whole token
+        user_identifier : str = payload.get("sub")
+        if not user_identifier :
+            raise credentials_exception
+       
+    except JWTError:
+        raise credentials_exception
+        # A valid token isn't enough — the user could have been deleted since it was
+    # issued. Always confirm they still exist, and get fresh data while you're here.
+
+    user = db.query(User).filter(User.id == user_identifier).first()
+    if user is None :
+        raise credentials_exception
+
+    return user
     """
 
 db is your SQLAlchemy database session.
@@ -60,6 +89,8 @@ class UserCreate(BaseModel):
     email: str
     password: str
     -> User means this function returns a User SQLAlchemy model object.
+
+Session is the class (blueprint) that defines an object responsible for managing interactions with the database, including using a database connection, tracking changes to ORM objects, and handling transactions.
 
 db.add() does not insert anything into the database by itself. It merely marks the object as "pending." The actual INSERT happens when the session is flushed, which db.commit() does automatically (unless it has already been flushed earlier). That's why commit() is the step where the row is actually written to the database.
     """
