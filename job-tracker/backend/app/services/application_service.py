@@ -26,3 +26,4 @@ def list_applications(db: Session, user_id: int, limit: int = 50, offset: int = 
         .offset(offset)
         .all()
     )
+
