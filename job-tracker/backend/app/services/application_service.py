@@ -17,3 +17,12 @@ def create_application(db : Session , data: ApplicationCreate , userid : int) ->
     db.refresh(application)   # reloads id, created_at, etc. from DB
     return application
 
+def list_applications(db: Session, user_id: int, limit: int = 50, offset: int = 0) -> list[JobApplication]:# limit fetches only a sppecific no of applicartions and offset skips those this helps in pagination when user clicks nextpage oddfet is set to 30 so it skips frist 30 applications and fetches nexxt 30
+    return (
+        db.query(JobApplication)
+        .filter(JobApplication.user_id == user_id)   # only THIS user's rows
+        .order_by(JobApplication.date_applied.desc())
+        .limit(limit)
+        .offset(offset)
+        .all()
+    )
