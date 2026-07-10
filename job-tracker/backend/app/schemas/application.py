@@ -19,7 +19,7 @@ class StatusUpdate(BaseModel):
     """The tiny payload for PATCH /applications/{id}/status.
     Deliberately just one field — this endpoint does one thing.
     """
-    status: ApplicationStatu
+    status: ApplicationStatus
 
 
 class ApplicationResponse(BaseModel):
