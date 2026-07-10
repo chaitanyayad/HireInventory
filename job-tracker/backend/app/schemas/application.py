@@ -14,3 +14,7 @@ class ApplicationCreate(BaseModel):
     date_applied = date
     notes = Optional[str] = None
     interview_date = Optional[date] = None
+
+class StatusUpdate(BaseModel):
+    #Updating the status of client from say oa ->interview or interview->hrround;
+    status = ApplicationStatus
