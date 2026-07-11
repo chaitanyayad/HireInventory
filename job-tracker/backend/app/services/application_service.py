@@ -46,7 +46,7 @@ def get_owned_application(db : Session , application_id :int , current_user :  U
 
 
 def update_application_status(db :Session , application_id : int , statusUpdate : StatusUpdate , current_user :  User) ->JobApplication:
-    application = _get_owned_application(db, application_id, current_user)
+    application = get_owned_application(db, application_id, current_user)
     application.status = statusUpdate.status
     db.commit()
     db.refresh(application)
@@ -54,6 +54,6 @@ def update_application_status(db :Session , application_id : int , statusUpdate 
 
 
 def delete_application(db: Session , application_id :int , current_user = User) ->None:
-    application = _get_owned_application(db, application_id, current_user)
+    application = get_owned_application(db, application_id, current_user)
     db.delete(application)
     db.commit()
