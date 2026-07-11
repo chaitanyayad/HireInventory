@@ -1,7 +1,7 @@
 from app.schemas.application import ApplicationCreate
-from fastadpi import HTTPException , status
-from app.models.application import JobApplication
-from sqlalchemy.orm import Session 
+from fastapi import HTTPException , status
+from app.models.application import JobApplication, ApplicationStatus
+from sqlalchemy.orm import Session
 from app.models.user import User
 from app.schemas.application import StatusUpdate
 def create_application(db : Session , data: ApplicationCreate , userid : int) ->JobApplication:
@@ -53,7 +53,7 @@ def update_application_status(db :Session , application_id : int , statusUpdate 
     return application
 
 
-def delete_application(db: Session , application_id :int , current_user = User) ->None:
+def delete_application(db: Session , application_id :int , current_user : User) ->None:
     application = get_owned_application(db, application_id, current_user)
     db.delete(application)
     db.commit()
