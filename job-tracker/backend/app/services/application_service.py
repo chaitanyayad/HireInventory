@@ -1,6 +1,9 @@
 from app.schemas.application import ApplicationCreate
+from fastadpi import HTTPException , status
 from app.models.application import JobApplication
 from sqlalchemy.orm import Session 
+from app.models.user import User
+from app.schemas.application import StatusUpdate
 def create_application(db : Session , data: ApplicationCreate , userid : int) ->JobApplication:
     application = JobApplication(
         user_id = userid,  # from the JWT, never the request body    
@@ -27,3 +30,30 @@ def list_applications(db: Session, user_id: int, limit: int = 50, offset: int = 
         .all()
     )
 
+#fetch an application and confirm whethre the current user owns it so no one can update or delete other users applciations
+def get_owned_application(db : Session , application_id :int , current_user :  User ) ->JobApplication :
+    application = (
+        db.query(JobApplication)
+        .filter(JobApplication.id == application_id)
+        .first()
+    )
+    if application is None or application.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Application not found",
+        )
+    return application
+
+
+def update_application_status(db :Session , application_id : int , statusUpdate : StatusUpdate , current_user :  User) ->JobApplication:
+    application = _get_owned_application(db, application_id, current_user)
+    application.status = statusUpdate.status
+    db.commit()
+    db.refresh(application)
+    return application
+
+
+def delete_application(db: Session , application_id :int , current_user = User) ->None:
+    application = _get_owned_application(db, application_id, current_user)
+    db.delete(application)
+    db.commit()
