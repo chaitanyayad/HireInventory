@@ -3,3 +3,7 @@ jobtrack/
 __pycache__/
 job_tracker_plan.md
 *.pyc
+skills/
+.claude/
+.agents/
+skills-lock.json
