@@ -8,6 +8,7 @@ class Settings(BaseSettings):#reading from env file instead of validating python
     JWT_Secret_Key: str 
     JWT_Algorithm : str = "HS256"
     JWT_Expiration_Time: int = 60
+    REDIS_URL : str
     """
     BaseSettings enables reading configuration from environment sources.
     Config tells it which environment sources to use.
