@@ -26,6 +26,7 @@ pydantic_core==2.46.4
 python-dotenv==1.2.2
 python-jose==3.5.0
 PyYAML==6.0.3
+redis==8.0.1
 rsa==4.9.1
 six==1.17.0
 SQLAlchemy==2.0.50
