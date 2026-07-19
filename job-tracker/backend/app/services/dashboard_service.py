@@ -6,9 +6,7 @@ from app.services import cache_service
 
 def compute_stats(db: Session, user_id: int) -> dict:
     applications = (
-        db.query(JobApplication)
-        .filter(JobApplication.user_id == user_id)
-        .all()
+        db.query(JobApplication).filter(JobApplication.user_id == user_id).all()
     )
     total = len(applications)
     by_status = {status.value: 0 for status in ApplicationStatus}
