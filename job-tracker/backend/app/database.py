@@ -58,9 +58,13 @@ Close
 
 One session.
 """
+from redis.asyncio import Redis
 from app.config import settings
 
 engine = create_engine(settings.DATABASE_URL) #fetch database url from env file and pass it to create_engine to connect to database
+
+# Shared async Redis client (holds an internal connection pool, created once).
+redis_client: Redis = Redis.from_url(settings.REDIS_URL, decode_responses=True)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine) #bind = which engine should session use to talk to the database
 # automocommit = False means you have to commit changes manually by db.commit() after making changes to the database
@@ -74,3 +78,8 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# Dependency — yields the shared async Redis client to route handlers.
+async def get_redis() -> Redis:
+    return redis_client
