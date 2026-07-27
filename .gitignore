@@ -2,6 +2,7 @@ jobtrack/
 .env
 __pycache__/
 job_tracker_plan.md
+rabbitmq_summary.md
 *.pyc
 skills/
 .claude/

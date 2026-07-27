@@ -12,6 +12,21 @@ class Settings(BaseSettings):#reading from env file instead of validating python
     REDIS_LIMIT_REQUESTS : int=20
     REDIS_WINDOW_TIME : int = 60
     TRUST_PROXY_HEADERS: bool = False
+
+    # RabbitMQ — where the broker lives and which queue status events go to.
+    # %2F is the url-encoded default vhost "/"
+    RABBITMQ_URL: str = "amqp://guest:guest@localhost:5672/%2F"
+    STATUS_EVENTS_QUEUE: str = "status_events"
+
+    # SMTP — used by the notification worker to send emails.
+    # EMAILS_ENABLED=False means the worker just prints the email to the
+    # console instead of sending it (so you can test without real SMTP creds).
+    EMAILS_ENABLED: bool = False
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    EMAIL_FROM: str = ""
     
     """
     BaseSettings enables reading configuration from environment sources.

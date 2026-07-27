@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.models.user import User
 from app.schemas.application import StatusUpdate
 from app.services import cache_service
+from app.services import event_publisher
 def create_application(db : Session , data: ApplicationCreate , userid : int) ->JobApplication:
     application = JobApplication(
         user_id = userid,  # from the JWT, never the request body    
@@ -49,10 +50,22 @@ def get_owned_application(db : Session , application_id :int , current_user :  U
 
 def update_application_status(db :Session , application_id : int , statusUpdate : StatusUpdate , current_user :  User) ->JobApplication:
     application = get_owned_application(db, application_id, current_user)
+    old_status = application.status # remember what it was BEFORE we change it, so the event can say "screening -> interview"
     application.status = statusUpdate.status
     db.commit()
     db.refresh(application)
     cache_service.invalidate_stats(current_user.id)
+    # publish AFTER commit — never announce a change that isn't saved yet.
+    # If RabbitMQ is down this logs a warning and moves on (fail-open).
+    event_publisher.publish_status_change_event(
+        application_id=str(application.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+        company_name=application.company_name,
+        role=application.role,
+        old_status=old_status.value,
+        new_status=application.status.value,
+    )
     return application
 
 
