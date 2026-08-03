@@ -6,6 +6,7 @@ from app.models.user import User
 from app.schemas.application import StatusUpdate
 from app.services import cache_service
 from app.services import event_publisher
+from app.websockets import broker
 def create_application(db : Session , data: ApplicationCreate , userid : int) ->JobApplication:
     application = JobApplication(
         user_id = userid,  # from the JWT, never the request body    
@@ -65,6 +66,21 @@ def update_application_status(db :Session , application_id : int , statusUpdate 
         role=application.role,
         old_status=old_status.value,
         new_status=application.status.value,
+    )
+    # Announce to any open browser tabs. Separate from the RabbitMQ publish on
+    # purpose — that one is a durable queue for work that must happen exactly
+    # once (the email); this one is a fire-and-forget broadcast for UI that is
+    # only worth delivering if someone is actually looking. Also fail-open.
+    broker.publish_event(
+        {
+            "event_type": "status_changed",
+            "application_id": str(application.id),
+            "user_id": str(current_user.id),
+            "company_name": application.company_name,
+            "role": application.role,
+            "old_status": old_status.value,
+            "new_status": application.status.value,
+        }
     )
     return application
 

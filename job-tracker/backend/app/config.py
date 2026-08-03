@@ -18,6 +18,10 @@ class Settings(BaseSettings):#reading from env file instead of validating python
     RABBITMQ_URL: str = "amqp://guest:guest@localhost:5672/%2F"
     STATUS_EVENTS_QUEUE: str = "status_events"
 
+    # WebSockets — the Redis pub/sub channel every API process subscribes to,
+    # so a status change handled by one worker reaches a socket held by another.
+    WS_EVENTS_CHANNEL: str = "ws:status_events"
+
     # SMTP — used by the notification worker to send emails.
     # EMAILS_ENABLED=False means the worker just prints the email to the
     # console instead of sending it (so you can test without real SMTP creds).
