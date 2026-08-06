@@ -6,7 +6,7 @@ from sqlalchemy import text
 from app.database import engine
 from app.database import Base, engine
 from app.models import User, JobApplication
-from app.routers import auth , application, dashboard
+from app.routers import auth , application, dashboard, ai
 from app.websockets import broker, status_ws
 
 
@@ -14,6 +14,7 @@ app = FastAPI(title = "Job Tracker API")
 app.include_router(auth.router)
 app.include_router(application.router)
 app.include_router(dashboard.router)
+app.include_router(ai.router)
 app.include_router(status_ws.router)
 
 # Handle on the background Redis-subscriber task, so shutdown can cancel it.

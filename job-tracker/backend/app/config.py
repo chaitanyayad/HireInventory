@@ -31,7 +31,11 @@ class Settings(BaseSettings):#reading from env file instead of validating python
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     EMAIL_FROM: str = ""
-    
+
+    # Claude API — used for AI insights, cover letters, and interview prep.
+    ANTHROPIC_API_KEY: str = ""
+    CLAUDE_MODEL: str = "claude-sonnet-4-20250514"
+
     """
     BaseSettings enables reading configuration from environment sources.
     Config tells it which environment sources to use.

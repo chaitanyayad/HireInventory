@@ -34,6 +34,17 @@ def list_applications(db: Session, user_id: int, limit: int = 50, offset: int = 
         .all()
     )
 
+def list_all_applications(db: Session, user_id: int) -> list[JobApplication]:
+    # No limit/offset — the AI insight analyzer needs the FULL history,
+    # not just one page of it.
+    return (
+        db.query(JobApplication)
+        .filter(JobApplication.user_id == user_id)
+        .order_by(JobApplication.date_applied.desc())
+        .all()
+    )
+
+
 #fetch an application and confirm whethre the current user owns it so no one can update or delete other users applciations
 def get_owned_application(db : Session , application_id :int , current_user :  User ) ->JobApplication :
     application = (
