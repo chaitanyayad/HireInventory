@@ -8,3 +8,13 @@ class InsightResponse(BaseModel):
     """
     insight: str
     applications_analyzed: int
+
+
+class CoverLetterRequest(BaseModel):
+    company_name: str
+    role: str
+    skills: str  # free-text, comma-separated or a short paragraph
+
+
+class CoverLetterResponse(BaseModel):
+    content: str

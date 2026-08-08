@@ -50,3 +50,23 @@ def analyze_applications(applications: list[JobApplication]) -> str:
         messages=[{"role": "user", "content": _build_prompt(applications)}],
     )
     return response.content[0].text
+
+
+def _build_cover_letter_prompt(company_name: str, role: str, skills: str) -> str:
+    return (
+        f"Write a tailored, concise cold email / cover letter for a {role} "
+        f"position at {company_name}. Highlight these skills naturally, don't "
+        f"just list them: {skills}. Keep it under 200 words, professional but "
+        "not stiff, and ready to send as-is — no placeholder brackets."
+    )
+
+
+def generate_cover_letter(company_name: str, role: str, skills: str) -> str:
+    response = client.messages.create(
+        model=settings.CLAUDE_MODEL,
+        max_tokens=600,
+        messages=[
+            {"role": "user", "content": _build_cover_letter_prompt(company_name, role, skills)}
+        ],
+    )
+    return response.content[0].text
