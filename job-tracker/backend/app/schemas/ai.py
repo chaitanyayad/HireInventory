@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 
 class InsightResponse(BaseModel):
@@ -18,3 +18,29 @@ class CoverLetterRequest(BaseModel):
 
 class CoverLetterResponse(BaseModel):
     content: str
+
+
+class InterviewPrepRequest(BaseModel):
+    """Either point at one of your own applications (application_id) and let the
+    server fill in company/role, or pass company_name + role directly for a
+    company you haven't logged yet.
+    """
+    application_id: int | None = None
+    company_name: str | None = None
+    role: str | None = None
+
+    @model_validator(mode="after")
+    def require_application_or_company_and_role(self) -> "InterviewPrepRequest":
+        if self.application_id is None and not (self.company_name and self.role):
+            raise ValueError(
+                "Provide either application_id, or both company_name and role."
+            )
+        return self
+
+
+class InterviewPrepResponse(BaseModel):
+    # company/role are echoed back because they may have come from the DB
+    # (application_id) rather than from the request body.
+    company_name: str
+    role: str
+    prep: str

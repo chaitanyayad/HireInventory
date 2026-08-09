@@ -70,3 +70,49 @@ def generate_cover_letter(company_name: str, role: str, skills: str) -> str:
         ],
     )
     return response.content[0].text
+
+
+def _build_interview_prep_prompt(
+    company_name: str,
+    role: str,
+    status: str | None = None,
+    notes: str | None = None,
+) -> str:
+    # status/notes are only present when the request pointed at a saved
+    # application — they let Claude aim the prep at the round that's actually
+    # coming up instead of giving generic advice.
+    context = ""
+    if status:
+        context += f"\nI'm currently at the '{status}' stage of this application."
+    if notes:
+        context += f"\nMy notes on this application: {notes}"
+
+    return (
+        f"I have an interview coming up for a {role} position at {company_name}."
+        f"{context}\n\n"
+        "Tell me how to prepare. Cover:\n"
+        "1. The technical topics most likely to come up for this role\n"
+        "2. Likely behavioural / HR questions, given this company\n"
+        "3. 5-8 concrete practice questions I should be able to answer\n"
+        "4. What I should ask them\n"
+        "Be specific to this role and company — no generic interview advice."
+    )
+
+
+def generate_interview_prep(
+    company_name: str,
+    role: str,
+    status: str | None = None,
+    notes: str | None = None,
+) -> str:
+    response = client.messages.create(
+        model=settings.CLAUDE_MODEL,
+        max_tokens=1500,
+        messages=[
+            {
+                "role": "user",
+                "content": _build_interview_prep_prompt(company_name, role, status, notes),
+            }
+        ],
+    )
+    return response.content[0].text
