@@ -11,6 +11,11 @@ class Settings(BaseSettings):#reading from env file instead of validating python
     REDIS_URL : str
     REDIS_LIMIT_REQUESTS : int=20
     REDIS_WINDOW_TIME : int = 60
+
+    # Separate, much tighter budget for the Claude endpoints — every call there
+    # costs real money, so it's counted per user per hour, not per IP per minute.
+    AI_LIMIT_REQUESTS : int = 10
+    AI_WINDOW_TIME : int = 3600
     TRUST_PROXY_HEADERS: bool = False
 
     # RabbitMQ — where the broker lives and which queue status events go to.

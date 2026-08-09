@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies.rate_limit import rate_limit_user
 from app.models.user import User
 from app.routers.auth import get_current_user
 from app.schemas.ai import (
@@ -13,7 +14,15 @@ from app.schemas.ai import (
 )
 from app.services import ai_service, application_service
 
-router = APIRouter(prefix="/ai", tags=["ai"])
+# One shared budget across every AI endpoint rather than one per route: the
+# point is to cap what a single account can spend per hour, and three separate
+# 10/hour buckets would just be a 30/hour cap wearing a disguise. Declared on
+# the router so any AI route added later is covered by default.
+router = APIRouter(
+    prefix="/ai",
+    tags=["ai"],
+    dependencies=[Depends(rate_limit_user("ai"))],
+)
 
 
 @router.post("/analyze", response_model=InsightResponse)
