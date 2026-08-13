@@ -1,0 +1,182 @@
+@import 'tailwindcss';
+
+/* Tokens. Seven colours, three faces, nothing else. Any colour that is not
+   below is a bug — see design/compiled-spec.md. */
+@theme {
+  --color-paper: #e6e7e2;
+  --color-paper-deep: #d5d7d0;
+  --color-paper-inset: #eff0ec;
+  --color-ink: #1b1f1d;
+  --color-muted: #6b716c;
+  --color-rule: #b9bdb6;
+  --color-airmail-red: #a8342b;
+  --color-airmail-blue: #2a4b7c;
+
+  --font-display: 'Newsreader', Georgia, serif;
+  --font-sans: 'Libre Franklin', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* No sizes between display-m and body. The gap is the point: it makes the
+     scale read as authored rather than interpolated. */
+  --text-display-xl: 7rem;
+  --text-display-l: 3.5rem;
+  --text-display-m: 2rem;
+  --text-mono-l: 2.5rem;
+  --text-body: 0.9375rem;
+  --text-label: 0.75rem;
+  --text-mono: 0.6875rem;
+
+  --radius-none: 0;
+}
+
+@layer base {
+  /* Nothing in this interface is rounded and nothing floats. Enforced
+     globally so a stray component library default can't reintroduce either. */
+  *,
+  *::before,
+  *::after {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: 1.6;
+  }
+
+  /* Visible, never removed. 2px offset so it reads as a frame around the
+     control rather than a fill. */
+  :focus-visible {
+    outline: 2px solid var(--color-airmail-blue);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-airmail-blue);
+    color: var(--color-paper);
+  }
+}
+
+@layer components {
+  .type-display-xl {
+    font-family: var(--font-display);
+    font-size: var(--text-display-xl);
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    line-height: 0.92;
+  }
+
+  .type-display-l {
+    font-family: var(--font-display);
+    font-size: var(--text-display-l);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .type-display-m {
+    font-family: var(--font-display);
+    font-size: var(--text-display-m);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
+
+  /* The thesis carrier: anything that is evidence — a timestamp, a count, a
+     status code — is set in this. */
+  .type-mono {
+    font-family: var(--font-mono);
+    font-size: var(--text-mono);
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .type-mono-l {
+    font-family: var(--font-mono);
+    font-size: var(--text-mono-l);
+    font-weight: 300;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .type-label {
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  /* The signature. Budget: two per page, maximum. */
+  .airmail-edge {
+    height: 6px;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--color-airmail-red) 0 8px,
+      var(--color-paper) 8px 16px,
+      var(--color-airmail-blue) 16px 24px,
+      var(--color-paper) 24px 32px
+    );
+  }
+}
+
+/* ── Entrance vocabulary ──────────────────────────────────────────────────
+   Four types. None of them moves an element in space: this film cuts between
+   static frames, it does not pan. `fadeUp` is deliberately not in the set. */
+
+@keyframes hold {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rule-draw {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0);
+  }
+}
+
+/* Appears at full opacity on the first frame. Intentionally empty — the
+   absence of a transition IS the effect, and it needs a class name so the
+   storyboard's entrance map can be read off the markup. */
+.e-cut {
+}
+
+/* `backwards`, not `both`, and no delay.
+   With `both`, the resting state came from the animation's forwards fill, and
+   the 120ms delay left the hero at opacity 0 for the first ~210ms after mount
+   — long enough that a screenshot, a crawler, or a slow paint caught a blank
+   frame. With `backwards` the resting state is the element's own style, so if
+   the animation never runs at all the content is simply visible. */
+.e-hold {
+  animation: hold 160ms linear backwards;
+}
+
+.e-rule {
+  animation: rule-draw 320ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Content is never withheld from anyone. The tick counter has its own
+     reduced-motion path in useTick() that jumps straight to the value. */
+  .e-hold,
+  .e-rule {
+    animation: none;
+    opacity: 1;
+    clip-path: none;
+  }
+}

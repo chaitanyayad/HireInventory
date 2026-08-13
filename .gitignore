@@ -9,3 +9,10 @@ skills/
 .claude/
 .agents/
 skills-lock.json
+
+# frontend
+node_modules/
+dist/
+.vite/
+*.local
+design

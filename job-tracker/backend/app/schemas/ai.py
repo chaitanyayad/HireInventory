@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from pydantic import BaseModel, model_validator
 
 
@@ -25,7 +27,8 @@ class InterviewPrepRequest(BaseModel):
     server fill in company/role, or pass company_name + role directly for a
     company you haven't logged yet.
     """
-    application_id: int | None = None
+    # UUID to match JobApplication.id — an int here never matched a real row.
+    application_id: UUID | None = None
     company_name: str | None = None
     role: str | None = None
 
