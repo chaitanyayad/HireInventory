@@ -1,0 +1,11 @@
+# Never bake real credentials into an image layer.
+.env
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+jobtrack/
+.git/

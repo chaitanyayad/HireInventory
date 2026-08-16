@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.vite/
+.env
+.env.local
+.git/
+
+# Design source material — not needed to build or serve the app.
+design/
