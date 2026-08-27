@@ -94,3 +94,39 @@ Session is the class (blueprint) that defines an object responsible for managing
 
 db.add() does not insert anything into the database by itself. It merely marks the object as "pending." The actual INSERT happens when the session is flushed, which db.commit() does automatically (unless it has already been flushed earlier). That's why commit() is the step where the row is actually written to the database.
     """
+
+def update_user_email(db: Session, user: User, new_email: str) -> User:
+    """Change the account email, rejecting one that is already taken."""
+    if new_email == user.email:
+        return user
+
+    existing = get_user_by_email(db, new_email)
+    if existing is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="That email is already registered.",
+        )
+
+    user.email = new_email
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def change_user_password(
+    db: Session, user: User, current_password: str, new_password: str
+) -> None:
+    """Replace the password, after proving the caller knows the current one."""
+    if not verify_password(current_password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Your current password is not correct.",
+        )
+    if len(new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The new password must be at least 8 characters.",
+        )
+
+    user.hashed_password = hash_password(new_password)
+    db.commit()

@@ -2,8 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.user import User
 from app.database import get_db
-from app.schemas.user import UserCreate, UserResponse , Token , UserLogin
-from app.services.auth_service import create_User, get_user_by_email , create_access_token , verify_password , get_current_user
+from app.schemas.user import UserCreate, UserResponse, Token, UserLogin, UserUpdate, PasswordChange
+from app.services.auth_service import (
+    create_User,
+    get_user_by_email,
+    create_access_token,
+    verify_password,
+    get_current_user,
+    update_user_email,
+    change_user_password,
+)
 from app.dependencies.rate_limit import rate_limit
 
 """
@@ -508,3 +516,28 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me")
 def read_me(current_user: User = Depends(get_current_user)):
     return {"id": current_user.id, "email": current_user.email}
+
+
+@router.patch("/me")
+def update_me(
+    data: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update the signed-in account. Only the email is editable today."""
+    user = update_user_email(db, current_user, data.email)
+    return {"id": user.id, "email": user.email}
+
+
+@router.post("/me/password", status_code=204)
+def change_password(
+    data: PasswordChange,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    """Change the account password.
+
+    Existing JWTs stay valid until they expire - there is no token revocation
+    list, so this does not sign other sessions out.
+    """
+    change_user_password(db, current_user, data.current_password, data.new_password)
