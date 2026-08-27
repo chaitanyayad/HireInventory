@@ -1,11 +1,31 @@
 from datetime import date
 
 import anthropic
+from fastapi import HTTPException, status
 
 from app.config import settings
 from app.models.application import JobApplication
 
-client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+# Built lazily rather than at import time. Constructing the client with no key
+# raises a TypeError deep inside the SDK, which surfaced as a bodyless HTTP 500
+# with no hint that the cause was configuration. Now a missing key is caught
+# before any request is attempted and reported as a 503 the UI can display.
+_client: anthropic.Anthropic | None = None
+
+
+def get_client() -> anthropic.Anthropic:
+    global _client
+    if not settings.ANTHROPIC_API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "ANTHROPIC_API_KEY is not configured, so the AI features are "
+                "unavailable. Set it in the environment and restart the API."
+            ),
+        )
+    if _client is None:
+        _client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+    return _client
 
 NO_DATA_MESSAGE = (
     "You don't have any applications logged yet — add a few so there's "
@@ -44,7 +64,7 @@ def analyze_applications(applications: list[JobApplication]) -> str:
     if not applications:
         return NO_DATA_MESSAGE
 
-    response = client.messages.create(
+    response = get_client().messages.create(
         model=settings.CLAUDE_MODEL,
         max_tokens=1000,
         messages=[{"role": "user", "content": _build_prompt(applications)}],
@@ -62,7 +82,7 @@ def _build_cover_letter_prompt(company_name: str, role: str, skills: str) -> str
 
 
 def generate_cover_letter(company_name: str, role: str, skills: str) -> str:
-    response = client.messages.create(
+    response = get_client().messages.create(
         model=settings.CLAUDE_MODEL,
         max_tokens=600,
         messages=[
@@ -105,7 +125,7 @@ def generate_interview_prep(
     status: str | None = None,
     notes: str | None = None,
 ) -> str:
-    response = client.messages.create(
+    response = get_client().messages.create(
         model=settings.CLAUDE_MODEL,
         max_tokens=1500,
         messages=[
