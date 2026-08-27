@@ -81,6 +81,8 @@ services:
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/%2F
       JWT_Secret_Key: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY in .env}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-opus-5}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080,http://localhost:5173,http://127.0.0.1:5173}
       EMAILS_ENABLED: ${EMAILS_ENABLED:-False}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
@@ -114,6 +116,7 @@ services:
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/%2F
       JWT_Secret_Key: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY in .env}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-opus-5}
       EMAILS_ENABLED: ${EMAILS_ENABLED:-False}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}

@@ -18,6 +18,22 @@ class Settings(BaseSettings):#reading from env file instead of validating python
     AI_WINDOW_TIME : int = 3600
     TRUST_PROXY_HEADERS: bool = False
 
+    # Browser origins allowed to call this API, comma-separated.
+    # Hardcoding localhost meant every request from a deployed frontend died at
+    # the CORS preflight, so this has to be configurable per environment.
+    # Production example:
+    #   CORS_ORIGINS=https://hireinventory.vercel.app
+    CORS_ORIGINS: str = (
+        "http://localhost:5173,http://127.0.0.1:5173,"
+        "http://localhost:4173,http://127.0.0.1:4173,"
+        "http://localhost:8080,http://127.0.0.1:8080"
+    )
+
+    @property
+    def cors_origins(self) -> list[str]:
+        """CORS_ORIGINS split into the list CORSMiddleware expects."""
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+
     # RabbitMQ — where the broker lives and which queue status events go to.
     # %2F is the url-encoded default vhost "/"
     RABBITMQ_URL: str = "amqp://guest:guest@localhost:5672/%2F"
@@ -39,7 +55,9 @@ class Settings(BaseSettings):#reading from env file instead of validating python
 
     # Claude API — used for AI insights, cover letters, and interview prep.
     ANTHROPIC_API_KEY: str = ""
-    CLAUDE_MODEL: str = "claude-sonnet-4-20250514"
+    # claude-sonnet-4-20250514 was deprecated with a June 2026 retirement and
+    # now 404s. Current IDs: claude-opus-5, claude-sonnet-5, claude-haiku-4-5.
+    CLAUDE_MODEL: str = "claude-opus-5"
 
     """
     BaseSettings enables reading configuration from environment sources.

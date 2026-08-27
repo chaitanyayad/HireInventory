@@ -4,6 +4,7 @@ import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+from app.config import settings
 from app.database import engine
 from app.database import Base, engine
 from app.models import User, JobApplication
@@ -11,7 +12,7 @@ from app.routers import auth , application, dashboard, ai
 from app.websockets import broker, status_ws
 
 
-app = FastAPI(title = "Job Tracker API")
+app = FastAPI(title = "HireInventory API")
 
 # The React dev server is a different origin (5173 vite / 4173 vite preview),
 # so without this every fetch dies at the preflight before it reaches a route.
@@ -19,12 +20,7 @@ app = FastAPI(title = "Job Tracker API")
 # mutually exclusive per the CORS spec, and browsers enforce it.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:4173",
-        "http://127.0.0.1:4173",
-    ],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
