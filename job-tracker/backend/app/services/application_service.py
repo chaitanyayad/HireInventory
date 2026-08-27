@@ -3,7 +3,7 @@ from fastapi import HTTPException , status
 from app.models.application import JobApplication, ApplicationStatus
 from sqlalchemy.orm import Session
 from app.models.user import User
-from app.schemas.application import StatusUpdate
+from app.schemas.application import ApplicationUpdate, StatusUpdate
 from app.services import cache_service
 from app.services import event_publisher
 from app.websockets import broker
@@ -57,6 +57,31 @@ def get_owned_application(db : Session , application_id :int , current_user :  U
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Application not found",
         )
+    return application
+
+
+def update_application(
+    db: Session,
+    application_id,
+    data: ApplicationUpdate,
+    current_user: User,
+) -> JobApplication:
+    """Replace the editable fields of an application the caller owns.
+
+    No cache invalidation here: dashboard stats are derived from `status` and
+    the row count, and neither can change through this endpoint.
+    """
+    application = get_owned_application(db, application_id, current_user)
+
+    application.company_name = data.company_name
+    application.role = data.role
+    application.job_url = str(data.job_link) if data.job_link else None
+    application.date_applied = data.date_applied
+    application.interview_date = data.interview_date
+    application.notes = data.notes
+
+    db.commit()
+    db.refresh(application)
     return application
 
 

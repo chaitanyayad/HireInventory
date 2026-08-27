@@ -16,6 +16,23 @@ class ApplicationCreate(BaseModel):
     notes: Optional[str] = None
     interview_date: Optional[date] = None
 
+class ApplicationUpdate(BaseModel):
+    """Body for PUT /applications/{id} - a full replacement of the editable
+    fields.
+
+    `status` is deliberately absent. Status transitions go through
+    PATCH /applications/{id}/status, which is the only path that publishes the
+    RabbitMQ and WebSocket events. Allowing a status change here would let one
+    silently skip the whole notification pipeline.
+    """
+    company_name: str
+    role: str
+    job_link: Optional[HttpUrl] = None
+    date_applied: date
+    notes: Optional[str] = None
+    interview_date: Optional[date] = None
+
+
 class StatusUpdate(BaseModel):
     """The tiny payload for PATCH /applications/{id}/status.
     Deliberately just one field — this endpoint does one thing.

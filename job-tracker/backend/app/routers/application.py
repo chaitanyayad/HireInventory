@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models.application import JobApplication
 from app.models.user import User
 from app.routers.auth import get_current_user   # wherever your dependency lives
-from app.schemas.application import ApplicationCreate, ApplicationResponse , StatusUpdate
+from app.schemas.application import ApplicationCreate, ApplicationResponse, ApplicationUpdate, StatusUpdate
 from app.services import application_service
 
 router = APIRouter(prefix="/applications", tags=["applications"])
@@ -28,6 +28,12 @@ def get_application(application_id: UUID, db: Session = Depends(get_db), current
     # Lets the detail page deep-link. get_owned_application already 404s on
     # someone else's row, so this leaks nothing the list didn't already.
     return application_service.get_owned_application(db, application_id, current_user)
+
+
+@router.put("/{application_id}", response_model=ApplicationResponse)
+def replace_application(application_id: UUID, data: ApplicationUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> JobApplication:
+    # Status is not editable here on purpose - see ApplicationUpdate.
+    return application_service.update_application(db, application_id, data, current_user)
 
 
 @router.patch("/{application_id}/status" , response_model = ApplicationResponse , status_code = 200)
