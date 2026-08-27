@@ -1,182 +1,215 @@
 @import 'tailwindcss';
 
-/* Tokens. Seven colours, three faces, nothing else. Any colour that is not
-   below is a bug — see design/compiled-spec.md. */
+/* ── Tokens ───────────────────────────────────────────────────────────────
+   Deep teal-navy base with a teal→cyan→blue gradient family and amber as the
+   single warm accent. No purple anywhere by request — which also keeps this
+   clear of the default AI-gradient look. */
 @theme {
-  --color-paper: #e6e7e2;
-  --color-paper-deep: #d5d7d0;
-  --color-paper-inset: #eff0ec;
-  --color-ink: #1b1f1d;
-  --color-muted: #6b716c;
-  --color-rule: #b9bdb6;
-  --color-airmail-red: #a8342b;
-  --color-airmail-blue: #2a4b7c;
+  --color-base: #04121a;
+  --color-base-2: #071e2a;
+  --color-ink: #eaf7fb;
+  --color-muted: #8ba7b4;
+  --color-faint: #5b7684;
 
-  --font-display: 'Newsreader', Georgia, serif;
-  --font-sans: 'Libre Franklin', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --color-teal: #14b8a6;
+  --color-cyan: #22d3ee;
+  --color-blue: #3b82f6;
+  --color-amber: #f59e0b;
+  --color-emerald: #10b981;
+  --color-rose: #f43f5e;
+  --color-steel: #64748b;
 
-  /* No sizes between display-m and body. The gap is the point: it makes the
-     scale read as authored rather than interpolated. */
-  --text-display-xl: 7rem;
-  --text-display-l: 3.5rem;
-  --text-display-m: 2rem;
-  --text-mono-l: 2.5rem;
-  --text-body: 0.9375rem;
-  --text-label: 0.75rem;
-  --text-mono: 0.6875rem;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Sora', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  --radius-none: 0;
+  --radius-glass: 1rem;
 }
 
 @layer base {
-  /* Nothing in this interface is rounded and nothing floats. Enforced
-     globally so a stray component library default can't reintroduce either. */
-  *,
-  *::before,
-  *::after {
-    border-radius: 0 !important;
-    box-shadow: none !important;
-  }
-
   html {
     -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
   }
 
   body {
-    background: var(--color-paper);
+    background: var(--color-base);
     color: var(--color-ink);
     font-family: var(--font-sans);
-    font-size: var(--text-body);
-    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
   }
 
-  /* Visible, never removed. 2px offset so it reads as a frame around the
-     control rather than a fill. */
+  /* Focus stays visible everywhere — glass surfaces make default outlines
+     hard to see, so this is an explicit high-contrast ring. */
   :focus-visible {
-    outline: 2px solid var(--color-airmail-blue);
+    outline: 2px solid var(--color-cyan);
     outline-offset: 2px;
   }
 
   ::selection {
-    background: var(--color-airmail-blue);
-    color: var(--color-paper);
+    background: color-mix(in srgb, var(--color-cyan) 35%, transparent);
+    color: #fff;
   }
+
+  /* Scrollbars, so they don't punch a bright hole in a dark UI. */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); background-clip: content-box; }
 }
 
 @layer components {
-  .type-display-xl {
+  /* ── Glass surfaces ─────────────────────────────────────────────────────
+     Three depths. The inset highlight on the top edge is what sells the
+     "pane of glass" read — without it these look like flat translucent boxes. */
+  .glass {
+    background: rgba(255, 255, 255, 0.045);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  }
+
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.075);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    box-shadow:
+      0 16px 48px rgba(0, 0, 0, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  }
+
+  .glass-subtle {
+    background: rgba(255, 255, 255, 0.025);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  /* ── Gradient family ──────────────────────────────────────────────────── */
+  .grad-primary {
+    background-image: linear-gradient(135deg, #14b8a6 0%, #22d3ee 50%, #3b82f6 100%);
+  }
+
+  .grad-text {
+    background-image: linear-gradient(120deg, #5eead4 0%, #22d3ee 45%, #60a5fa 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .grad-border {
+    position: relative;
+    background-clip: padding-box;
+    border: 1px solid transparent;
+  }
+  .grad-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    margin: -1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.6), rgba(59, 130, 246, 0.6));
+  }
+
+  /* Ambient mesh behind everything. Fixed so it doesn't scroll with content —
+     the page should feel like it floats over a lit surface. */
+  .mesh-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -10;
+    overflow: hidden;
+    pointer-events: none;
+    background: var(--color-base);
+  }
+  /* Scrim over the mesh — keeps the colour without letting any single blob
+     dominate the panels sitting on top of it. */
+  .mesh-scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(4, 18, 26, 0.42);
+  }
+
+  .mesh-blob {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(110px);
+    /* Kept low: glass surfaces are transparent, so a strong blob bleeds
+       through content and tints whole cards. */
+    opacity: 0.28;
+  }
+
+  /* Fine grid overlay — stops the large blurred fields from reading as a
+     plain gradient wallpaper. */
+  .grid-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: -9;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+  }
+
+  .type-display {
     font-family: var(--font-display);
-    font-size: var(--text-display-xl);
-    font-weight: 400;
+    font-weight: 600;
     letter-spacing: -0.03em;
-    line-height: 0.92;
+    line-height: 1.05;
   }
 
-  .type-display-l {
-    font-family: var(--font-display);
-    font-size: var(--text-display-l);
-    font-weight: 400;
-    letter-spacing: -0.02em;
-    line-height: 1;
-  }
-
-  .type-display-m {
-    font-family: var(--font-display);
-    font-size: var(--text-display-m);
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    line-height: 1.15;
-  }
-
-  /* The thesis carrier: anything that is evidence — a timestamp, a count, a
-     status code — is set in this. */
   .type-mono {
     font-family: var(--font-mono);
-    font-size: var(--text-mono);
-    font-weight: 400;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-
-  .type-mono-l {
-    font-family: var(--font-mono);
-    font-size: var(--text-mono-l);
-    font-weight: 300;
-    letter-spacing: -0.01em;
-    line-height: 1;
     font-variant-numeric: tabular-nums;
   }
-
-  .type-label {
-    font-size: var(--text-label);
-    font-weight: 500;
-    letter-spacing: 0.02em;
-  }
-
-  /* The signature. Budget: two per page, maximum. */
-  .airmail-edge {
-    height: 6px;
-    background: repeating-linear-gradient(
-      -45deg,
-      var(--color-airmail-red) 0 8px,
-      var(--color-paper) 8px 16px,
-      var(--color-airmail-blue) 16px 24px,
-      var(--color-paper) 24px 32px
-    );
-  }
 }
 
-/* ── Entrance vocabulary ──────────────────────────────────────────────────
-   Four types. None of them moves an element in space: this film cuts between
-   static frames, it does not pan. `fadeUp` is deliberately not in the set. */
-
-@keyframes hold {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+/* ── Motion ───────────────────────────────────────────────────────────────
+   Page and element animation is handled by Motion (motion.dev) in the
+   components. These are only for effects Motion shouldn't own: continuous
+   ambient loops and gradient sweeps. */
+@keyframes float-slow {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(3%, -4%) scale(1.06); }
 }
 
-@keyframes rule-draw {
-  from {
-    clip-path: inset(0 100% 0 0);
-  }
-  to {
-    clip-path: inset(0);
-  }
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
-/* Appears at full opacity on the first frame. Intentionally empty — the
-   absence of a transition IS the effect, and it needs a class name so the
-   storyboard's entrance map can be read off the markup. */
-.e-cut {
-}
+.animate-float-slow { animation: float-slow 18s ease-in-out infinite; }
+.animate-float-slower { animation: float-slow 26s ease-in-out infinite reverse; }
 
-/* `backwards`, not `both`, and no delay.
-   With `both`, the resting state came from the animation's forwards fill, and
-   the 120ms delay left the hero at opacity 0 for the first ~210ms after mount
-   — long enough that a screenshot, a crawler, or a slow paint caught a blank
-   frame. With `backwards` the resting state is the element's own style, so if
-   the animation never runs at all the content is simply visible. */
-.e-hold {
-  animation: hold 160ms linear backwards;
-}
-
-.e-rule {
-  animation: rule-draw 320ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* Content is never withheld from anyone. The tick counter has its own
-     reduced-motion path in useTick() that jumps straight to the value. */
-  .e-hold,
-  .e-rule {
-    animation: none;
-    opacity: 1;
-    clip-path: none;
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
+  .animate-float-slow, .animate-float-slower { animation: none; }
 }
