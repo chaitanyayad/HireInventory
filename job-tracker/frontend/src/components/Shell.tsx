@@ -1,119 +1,205 @@
+import {
+  LayoutDashboard,
+  ListChecks,
+  Plus,
+  Sparkles,
+  UserRound,
+  LogOut,
+  Menu,
+  X,
+} from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import { useAuth } from '@/hooks/useAuth'
 import { useApplications } from '@/hooks/useApplications'
-import { MonoStamp } from './ui'
+import { useAuth } from '@/hooks/useAuth'
 
 const NAV = [
-  { to: '/app', label: 'Dashboard', end: true },
-  { to: '/app/applications', label: 'Applications', end: false },
-  { to: '/app/new', label: 'Add', end: false },
-  { to: '/app/insights', label: 'Insights', end: false },
-  { to: '/app/settings', label: 'Account', end: false },
+  { to: '/app', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/app/applications', label: 'Applications', icon: ListChecks, end: false },
+  { to: '/app/new', label: 'Add new', icon: Plus, end: false },
+  { to: '/app/insights', label: 'AI Insights', icon: Sparkles, end: false },
+  { to: '/app/settings', label: 'Account', icon: UserRound, end: false },
 ]
 
-/**
- * The camera position.
- *
- * A fixed left frame that never scrolls and never changes width. Content moves
- * past it; it does not move. Everything else in the app is composed inside the
- * region to its right.
- */
+function Brand() {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="type-display text-lg tracking-tight">HireInventory</span>
+    </div>
+  )
+}
+
+function NavItems({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <nav className="flex flex-col gap-1">
+      {NAV.map((item) => {
+        const Icon = item.icon
+        return (
+          <NavLink key={item.to} to={item.to} end={item.end} onClick={onNavigate}>
+            {({ isActive }) => (
+              <div
+                className={cn(
+                  'relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition-colors',
+                  isActive ? 'text-ink' : 'text-muted hover:bg-white/5 hover:text-ink'
+                )}
+              >
+                {/* Shared layout id animates the active pill between items
+                    instead of cross-fading two separate backgrounds. */}
+                {isActive ? (
+                  <motion.span
+                    layoutId="nav-active"
+                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                    className="glass absolute inset-0 rounded-xl"
+                  />
+                ) : null}
+                <Icon className="relative z-10 h-[18px] w-[18px]" strokeWidth={2} />
+                <span className="relative z-10 font-medium">{item.label}</span>
+                {isActive ? (
+                  <span className="grad-primary relative z-10 ml-auto h-1.5 w-1.5 rounded-full" />
+                ) : null}
+              </div>
+            )}
+          </NavLink>
+        )
+      })}
+    </nav>
+  )
+}
+
+function LiveDot({ state }: { state: 'live' | 'connecting' | 'offline' }) {
+  const map = {
+    live: { color: 'bg-emerald', label: 'Live', hint: 'Status changes appear without refreshing' },
+    connecting: { color: 'bg-amber', label: 'Connecting', hint: 'Opening the live channel' },
+    offline: { color: 'bg-rose', label: 'Offline', hint: 'Changes need a refresh' },
+  }[state]
+
+  return (
+    <span
+      title={map.hint}
+      className="glass-subtle inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs"
+    >
+      <span className="relative flex h-2 w-2">
+        {state === 'live' ? (
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald opacity-60" />
+        ) : null}
+        <span className={cn('relative inline-flex h-2 w-2 rounded-full', map.color)} />
+      </span>
+      <span className="text-muted">{map.label}</span>
+    </span>
+  )
+}
+
 export function Shell() {
   const { user, logout } = useAuth()
   const { socket } = useApplications()
   const navigate = useNavigate()
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  function signOut() {
+    logout()
+    navigate('/login')
+  }
+
+  const initials = (user?.email ?? '?').slice(0, 2).toUpperCase()
 
   return (
-    <div className="min-h-screen bg-paper">
-      <aside className="fixed inset-y-0 left-0 z-20 flex w-18 flex-col justify-between border-r border-rule bg-paper py-6">
+    <div className="min-h-screen">
+      {/* Desktop sidebar */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col justify-between border-r border-white/[0.07] p-5 lg:flex">
         <div>
-          <div className="px-4">
-            {/* The mark: a filed record, not a logo. */}
-            <div className="h-6 w-6 border border-ink">
-              <div className="mt-2 h-px w-full bg-ink" />
-              <div className="mt-1 h-px w-2/3 bg-ink" />
-            </div>
+          <Brand />
+          <div className="mt-9">
+            <NavItems />
           </div>
-
-          <nav className="mt-10 flex flex-col">
-            {NAV.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  cn(
-                    // Active is a rule on the left edge, never a filled pill.
-                    'relative py-3 pl-4 pr-2 transition-colors',
-                    isActive
-                      ? 'text-ink before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-airmail-blue'
-                      : 'text-muted hover:text-ink'
-                  )
-                }
-                title={item.label}
-              >
-                <span className="type-mono [writing-mode:vertical-rl]">
-                  {item.label}
-                </span>
-              </NavLink>
-            ))}
-          </nav>
         </div>
 
-        <div className="flex flex-col items-center gap-4 px-2">
-          {/* Live indicator. A dot and a mono word — no pulse animation. */}
-          <span
-            className="flex flex-col items-center gap-2"
-            title={
-              socket === 'live'
-                ? 'Live: status changes appear without refreshing'
-                : socket === 'connecting'
-                  ? 'Connecting to the live channel'
-                  : 'Offline: status changes need a refresh'
-            }
-          >
-            <span
-              className={cn(
-                'h-2 w-2',
-                socket === 'live'
-                  ? 'bg-airmail-blue'
-                  : socket === 'connecting'
-                    ? 'bg-rule'
-                    : 'bg-airmail-red'
-              )}
-              aria-hidden
-            />
-            <MonoStamp className="[writing-mode:vertical-rl]">
-              {socket}
-            </MonoStamp>
-          </span>
-
-          <button
-            type="button"
-            onClick={() => {
-              logout()
-              navigate('/login')
-            }}
-            className="type-mono text-muted transition-colors hover:text-ink [writing-mode:vertical-rl]"
-          >
-            Sign out
-          </button>
+        <div className="space-y-3">
+          <LiveDot state={socket} />
+          <div className="glass flex items-center gap-3 rounded-xl p-3">
+            <div className="grad-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-[#04121a]">
+              {initials}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs text-muted" title={user?.email}>
+                {user?.email}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={signOut}
+              title="Sign out"
+              className="rounded-lg p-1.5 text-muted transition-colors hover:bg-white/10 hover:text-rose"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </aside>
 
-      <main className="pl-18">
-        <div className="flex items-center justify-between border-b border-rule px-8 py-4">
-          <MonoStamp>{user?.email}</MonoStamp>
-          <MonoStamp>
-            {new Date().toLocaleDateString('en-GB', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-            })}
-          </MonoStamp>
+      {/* Mobile top bar */}
+      <header className="glass sticky top-0 z-40 flex items-center justify-between px-4 py-3 lg:hidden">
+        <Brand />
+        <div className="flex items-center gap-2">
+          <LiveDot state={socket} />
+          <button
+            type="button"
+            onClick={() => setMobileOpen(true)}
+            className="rounded-lg p-2 text-muted hover:text-ink"
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
         </div>
-        <Outlet />
+      </header>
+
+      <AnimatePresence>
+        {mobileOpen ? (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileOpen(false)}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+            />
+            <motion.aside
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', stiffness: 320, damping: 34 }}
+              className="glass-strong fixed inset-y-0 right-0 z-50 w-72 p-5 lg:hidden"
+            >
+              <div className="mb-8 flex items-center justify-between">
+                <Brand />
+                <button
+                  type="button"
+                  onClick={() => setMobileOpen(false)}
+                  className="rounded-lg p-2 text-muted hover:text-ink"
+                  aria-label="Close menu"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <NavItems onNavigate={() => setMobileOpen(false)} />
+              <button
+                type="button"
+                onClick={signOut}
+                className="mt-6 flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm text-muted transition-colors hover:bg-white/5 hover:text-rose"
+              >
+                <LogOut className="h-[18px] w-[18px]" />
+                Sign out
+              </button>
+            </motion.aside>
+          </>
+        ) : null}
+      </AnimatePresence>
+
+      <main className="px-5 py-8 sm:px-8 lg:ml-64 lg:px-10">
+        <div className="mx-auto max-w-6xl">
+          <Outlet />
+        </div>
       </main>
     </div>
   )
