@@ -1,0 +1,124 @@
+# Render Blueprint — deploys the whole stack from one file.
+# https://dashboard.render.com/blueprints -> New Blueprint Instance -> point at this repo.
+#
+# What this does NOT include: RabbitMQ. Render has no managed broker, so this
+# app uses CloudAMQP's free tier instead (https://www.cloudamqp.com/ -> Little
+# Lemur plan -> copy the AMQP URL). RABBITMQ_URL below is `sync: false` on both
+# services that need it, so Render will prompt you for it once at blueprint
+# creation and store it as a normal secret from then on.
+#
+# One-time manual steps AFTER the first deploy (can't be scripted — Render
+# assigns each service's hostname only once it exists):
+#   1. Note the actual URLs Render gave job-tracker-backend and
+#      job-tracker-frontend (it appends "-XXXX" if the plain name was taken).
+#   2. If they differ from the guesses below, update:
+#        - CORS_ORIGINS on job-tracker-backend -> the frontend's real URL
+#        - VITE_API_URL / VITE_WS_URL on job-tracker-frontend -> the backend's
+#          real URL (these are baked in at build time, so also trigger a
+#          manual redeploy of the frontend after changing them)
+#   3. Paste your CloudAMQP URL into RABBITMQ_URL on both job-tracker-backend
+#      and job-tracker-worker when prompted (or later, in each service's
+#      Environment tab).
+
+databases:
+  - name: job-tracker-db
+    plan: starter # free Postgres auto-deletes after 30+14 days; this app's data should persist
+    region: oregon
+    postgresMajorVersion: "16"
+
+services:
+  - type: keyvalue
+    name: job-tracker-redis
+    plan: free # rate-limit counters and WS pub/sub are fine to lose on restart
+    region: oregon
+    ipAllowList: [] # empty = only reachable from Render's private network
+
+  - type: web
+    name: job-tracker-backend
+    runtime: docker
+    region: oregon
+    plan: free # spins down after 15 min idle (~1 min cold start). Bump to `starter` for always-on.
+    dockerfilePath: ./job-tracker/backend/Dockerfile
+    dockerContext: ./job-tracker/backend
+    healthCheckPath: /ping
+    # Runs after build, before traffic is routed to the new instance -
+    # replaces the `alembic upgrade head &&` prefix docker-compose uses locally.
+    preDeployCommand: alembic upgrade head
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: job-tracker-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: job-tracker-redis
+          property: connectionString
+      - key: JWT_Secret_Key
+        generateValue: true
+      - key: RABBITMQ_URL
+        sync: false # paste the CloudAMQP URL here
+      - key: GEMINI_API_KEY
+        sync: false # free tier, no billing required: https://aistudio.google.com/apikey
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash
+      # Render's edge terminates TLS and proxies every request, so without
+      # this the rate limiter sees Render's proxy IP for every visitor
+      # instead of each visitor's real IP - see rate_limit.py.
+      - key: TRUST_PROXY_HEADERS
+        value: "true"
+      # Update this if Render assigns job-tracker-frontend a different
+      # hostname than guessed (see the note at the top of this file).
+      - key: CORS_ORIGINS
+        value: https://job-tracker-frontend.onrender.com
+      - key: EMAILS_ENABLED
+        value: "false"
+
+  - type: worker
+    name: job-tracker-worker
+    runtime: docker
+    region: oregon
+    plan: starter # Render has no free Background Worker plan
+    dockerfilePath: ./job-tracker/backend/Dockerfile
+    dockerContext: ./job-tracker/backend
+    dockerCommand: python -m app.workers.notification_worker
+    envVars:
+      # Unused by the worker's logic but required at import time - app.config
+      # validates the full Settings model (including DB/JWT) on `import app.config`.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: job-tracker-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: job-tracker-redis
+          property: connectionString
+      - key: JWT_Secret_Key
+        generateValue: true
+      - key: RABBITMQ_URL
+        sync: false # same CloudAMQP URL as job-tracker-backend
+      - key: EMAILS_ENABLED
+        value: "false" # flip to "true" once SMTP_* below are filled in
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+
+  - type: web
+    name: job-tracker-frontend
+    runtime: static
+    region: oregon
+    rootDir: job-tracker/frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - source: /*
+        destination: /index.html
+    envVars:
+      # Update these if Render assigns job-tracker-backend a different
+      # hostname than guessed - then trigger a manual redeploy (build-time values).
+      - key: VITE_API_URL
+        value: https://job-tracker-backend.onrender.com
+      - key: VITE_WS_URL
+        value: wss://job-tracker-backend.onrender.com

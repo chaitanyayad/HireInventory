@@ -2,6 +2,7 @@ import { api } from './client'
 import type {
   Application,
   ApplicationCreate,
+  ApplicationUpdate,
   CoverLetterRequest,
   DashboardStats,
   InsightResponse,
@@ -19,6 +20,9 @@ export const auth = {
   login: (email: string, password: string) =>
     api.post<Token>('/auth/login', { email, password }),
   me: () => api.get<User>('/auth/me'),
+  updateEmail: (email: string) => api.patch<User>('/auth/me', { email }),
+  changePassword: (current_password: string, new_password: string) =>
+    api.post<void>('/auth/me/password', { current_password, new_password }),
 }
 
 /** /applications — routers/application.py */
@@ -30,6 +34,10 @@ export const applications = {
   get: (id: string) => api.get<Application>(`/applications/${id}`),
   create: (data: ApplicationCreate) =>
     api.post<Application>('/applications', data),
+  // PUT replaces the editable fields. Status is not among them - it moves
+  // only through updateStatus, which is what fires the live events.
+  update: (id: string, data: ApplicationUpdate) =>
+    api.put<Application>(`/applications/${id}`, data),
   updateStatus: (id: string, status: Status) =>
     api.patch<Application>(`/applications/${id}/status`, { status }),
   remove: (id: string) => api.delete<void>(`/applications/${id}`),

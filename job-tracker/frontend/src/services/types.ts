@@ -58,6 +58,9 @@ export interface ApplicationCreate {
   interview_date?: string | null
 }
 
+/** schemas/application.py :: ApplicationUpdate (status is not editable here) */
+export type ApplicationUpdate = ApplicationCreate
+
 /** services/dashboard_service.py :: compute_stats */
 export interface DashboardStats {
   total: number

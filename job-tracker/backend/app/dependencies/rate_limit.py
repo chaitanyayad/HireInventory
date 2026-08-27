@@ -52,9 +52,10 @@ def rate_limit_user(scope: str, limit: int | None = None, window: int | None = N
 
     IP is the right key for /auth, where there's no user yet and the thing
     you're stopping is someone hammering the login form. For endpoints that
-    cost real money per call (the Claude ones), the thing you're stopping is
-    one account burning the API budget — and that account can move between
-    IPs, or share one with everybody else behind a corporate NAT.
+    eat into the Gemini free-tier quota (the AI ones), the thing you're
+    stopping is one account burning the whole app's shared budget — and that
+    account can move between IPs, or share one with everybody else behind a
+    corporate NAT.
     """
     effective_limit = limit or settings.AI_LIMIT_REQUESTS
     effective_window = window or settings.AI_WINDOW_TIME

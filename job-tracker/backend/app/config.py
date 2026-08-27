@@ -12,8 +12,9 @@ class Settings(BaseSettings):#reading from env file instead of validating python
     REDIS_LIMIT_REQUESTS : int=20
     REDIS_WINDOW_TIME : int = 60
 
-    # Separate, much tighter budget for the Claude endpoints — every call there
-    # costs real money, so it's counted per user per hour, not per IP per minute.
+    # Separate, much tighter budget for the AI endpoints — every call there
+    # eats into the Gemini free-tier quota, so it's counted per user per hour,
+    # not per IP per minute.
     AI_LIMIT_REQUESTS : int = 10
     AI_WINDOW_TIME : int = 3600
     TRUST_PROXY_HEADERS: bool = False
@@ -53,11 +54,10 @@ class Settings(BaseSettings):#reading from env file instead of validating python
     SMTP_PASSWORD: str = ""
     EMAIL_FROM: str = ""
 
-    # Claude API — used for AI insights, cover letters, and interview prep.
-    ANTHROPIC_API_KEY: str = ""
-    # claude-sonnet-4-20250514 was deprecated with a June 2026 retirement and
-    # now 404s. Current IDs: claude-opus-5, claude-sonnet-5, claude-haiku-4-5.
-    CLAUDE_MODEL: str = "claude-opus-5"
+    # Gemini API — used for AI insights, cover letters, and interview prep.
+    # Free tier, no billing required: https://aistudio.google.com/apikey
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-3.5-flash"
 
     """
     BaseSettings enables reading configuration from environment sources.

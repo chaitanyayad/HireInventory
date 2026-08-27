@@ -12,6 +12,7 @@ import { getToken } from '@/services/client'
 import type {
   Application,
   ApplicationCreate,
+  ApplicationUpdate,
   DashboardStats,
   SocketEvent,
   Status,
@@ -27,6 +28,7 @@ interface ApplicationsValue {
   socket: SocketState
   refresh: () => Promise<void>
   create: (data: ApplicationCreate) => Promise<Application>
+  update: (id: string, data: ApplicationUpdate) => Promise<Application>
   updateStatus: (id: string, status: Status) => Promise<void>
   remove: (id: string) => Promise<void>
 }
@@ -110,6 +112,14 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
     return created
   }, [])
 
+  const update = useCallback(async (id: string, data: ApplicationUpdate) => {
+    const updated = await applicationsApi.update(id, data)
+    setItems((current) => current.map((item) => (item.id === id ? updated : item)))
+    // Stats are derived from status and row count, neither of which this
+    // endpoint can change, so there is nothing to re-read.
+    return updated
+  }, [])
+
   const updateStatus = useCallback(async (id: string, status: Status) => {
     const updated = await applicationsApi.updateStatus(id, status)
     // The socket will also deliver this change to this tab; applying it here
@@ -136,10 +146,11 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
       socket,
       refresh,
       create,
+      update,
       updateStatus,
       remove,
     }),
-    [items, stats, loading, error, socket, refresh, create, updateStatus, remove]
+    [items, stats, loading, error, socket, refresh, create, update, updateStatus, remove]
   )
 
   return (

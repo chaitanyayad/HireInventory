@@ -46,7 +46,7 @@ def build_email(event: dict) -> EmailMessage:
         f"Your application for {event['role']} at {event['company_name']} "
         f"just moved from {event['old_status']} to {event['new_status']}.\n\n"
         f"Keep going — every status change is progress.\n\n"
-        f"— Job Tracker"
+        f"— HireInventory"
     )
     return msg
 

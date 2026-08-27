@@ -4,7 +4,7 @@ from pydantic import BaseModel, model_validator
 
 
 class InsightResponse(BaseModel):
-    """What POST /ai/analyze sends back — the raw text Claude wrote,
+    """What POST /ai/analyze sends back — the raw text Gemini wrote,
     plus how many applications it was based on (so the frontend can
     show "not enough data yet" instead of a thin AI response).
     """

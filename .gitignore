@@ -16,3 +16,4 @@ dist/
 .vite/
 *.local
 design
+scripts

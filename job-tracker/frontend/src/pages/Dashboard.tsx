@@ -1,154 +1,206 @@
+import { ArrowRight, Clock, Plus, Send, TrendingUp } from 'lucide-react'
+import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 import { useApplications } from '@/hooks/useApplications'
-import { DayCounter, ProportionBand, StatusBadge } from '@/components/status'
-import { ErrorNote, MonoStamp, Rule, Spinner } from '@/components/ui'
+import { DaysBadge, PipelineBar, StatCard, StatusBadge } from '@/components/status'
+import {
+  Button,
+  Card,
+  EmptyState,
+  ErrorNote,
+  PageHeader,
+  PageTransition,
+  Skeleton,
+  staggerItem,
+  staggerParent,
+} from '@/components/ui'
 import { daysSince, formatStamp } from '@/lib/utils'
 
-/**
- * Composition: the band.
- *
- * A single full-width proportional bar, then an unequal 7/5 split. Not four
- * KPI tiles — as tiles you read four counts and have to compare them mentally;
- * as one band you see that 80% of your search is still `applied`, which is the
- * actual insight.
- */
 export function Dashboard() {
   const { items, stats, loading, error } = useApplications()
 
   if (loading) {
     return (
-      <div className="p-8">
-        <Spinner label="Reading the record" />
+      <div className="space-y-6">
+        <Skeleton className="h-12 w-64" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+        </div>
+        <Skeleton className="h-48" />
       </div>
     )
   }
 
   if (error) {
-    return (
-      <div className="p-8">
-        <ErrorNote>{error}</ErrorNote>
-      </div>
-    )
+    return <ErrorNote>{error}</ErrorNote>
   }
 
-  // Ranked by silence: longest wait first. Anything already resolved is not
-  // waiting on anyone, so it is excluded.
+  // Ranked by silence. Resolved applications aren't waiting on anyone.
   const waiting = items
-    .filter(
-      (item) => item.status !== 'offer' && item.status !== 'rejected'
-    )
-    .sort(
-      (a, b) => daysSince(b.date_applied) - daysSince(a.date_applied)
-    )
-    .slice(0, 6)
+    .filter((item) => item.status !== 'offer' && item.status !== 'rejected')
+    .sort((a, b) => daysSince(b.date_applied) - daysSince(a.date_applied))
 
   const recent = [...items]
-    .sort(
-      (a, b) =>
-        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-    )
-    .slice(0, 6)
+    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+    .slice(0, 5)
 
   const longest = waiting[0] ? daysSince(waiting[0].date_applied) : 0
 
   return (
-    <div>
-      <section className="e-hold p-8">
-        <div className="flex flex-wrap items-end justify-between gap-6">
-          <div>
-            <MonoStamp>The shape of your search</MonoStamp>
-            <h1 className="type-display-l mt-2">
-              {stats?.total ?? 0} sent · {stats?.response_rate ?? 0}% answered
-            </h1>
-          </div>
-          {longest > 0 ? (
-            <div className="text-right">
-              <MonoStamp>Longest silence</MonoStamp>
-              <div className="mt-2">
-                <DayCounter days={longest} />
-              </div>
-            </div>
-          ) : null}
-        </div>
+    <PageTransition>
+      <div className="space-y-8">
+        <PageHeader
+          eyebrow="Overview"
+          title={
+            <>
+              Your <span className="grad-text">search</span> at a glance
+            </>
+          }
+          action={
+            <Link to="/app/new">
+              <Button>
+                <Plus className="h-4 w-4" />
+                Add application
+              </Button>
+            </Link>
+          }
+        />
 
-        <div className="mt-8">
-          {stats ? <ProportionBand stats={stats} /> : null}
-        </div>
-      </section>
+        <motion.div
+          variants={staggerParent}
+          initial="hidden"
+          animate="show"
+          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          <motion.div variants={staggerItem}>
+            <StatCard
+              label="Applications sent"
+              value={stats?.total ?? 0}
+              accent="cyan"
+              footnote={
+                <span className="inline-flex items-center gap-1">
+                  <Send className="h-3 w-3" /> across your whole search
+                </span>
+              }
+            />
+          </motion.div>
+          <motion.div variants={staggerItem}>
+            <StatCard
+              label="Response rate"
+              value={stats?.response_rate ?? 0}
+              suffix="%"
+              accent="emerald"
+              footnote={
+                <span className="inline-flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3" /> moved past &ldquo;applied&rdquo;
+                </span>
+              }
+            />
+          </motion.div>
+          <motion.div variants={staggerItem}>
+            <StatCard
+              label="Longest silence"
+              value={longest}
+              suffix="d"
+              accent={longest >= 30 ? 'amber' : 'teal'}
+              footnote={
+                <span className="inline-flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {waiting.length} still awaiting a reply
+                </span>
+              }
+            />
+          </motion.div>
+        </motion.div>
 
-      <Rule />
-
-      <div className="grid grid-cols-1 lg:grid-cols-12">
-        <section className="e-cut border-rule lg:col-span-7 lg:border-r">
-          <div className="flex items-center justify-between border-b border-rule px-8 py-4">
-            <MonoStamp>Longest silence</MonoStamp>
-            <MonoStamp>Awaiting a reply</MonoStamp>
-          </div>
-
-          {waiting.length === 0 ? (
-            <div className="px-8 py-10">
-              <p className="type-display-m">Nothing is waiting.</p>
-              <p className="mt-2 text-muted">
-                Every application has been resolved, or none has been added yet.{' '}
-                <Link to="/app/new" className="text-ink underline">
-                  Add one
-                </Link>
-                .
+        <Card className="p-6">
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <h2 className="type-display text-lg">Pipeline</h2>
+              <p className="mt-0.5 text-xs text-muted">
+                The shape of your search, not just the counts
               </p>
             </div>
-          ) : (
-            waiting.map((item) => (
-              <Link
-                key={item.id}
-                to={`/app/applications/${item.id}`}
-                className="flex items-center justify-between border-b border-rule px-8 py-5 transition-colors hover:bg-paper-inset"
-              >
-                <div className="min-w-0">
-                  <p className="type-display-m truncate">{item.company_name}</p>
-                  <p className="type-mono mt-1 truncate text-muted">
-                    {item.role}
-                  </p>
-                </div>
-                <div className="shrink-0 pl-6 text-right">
-                  <span className="type-mono-l text-ink">
-                    {daysSince(item.date_applied)}
-                  </span>
-                  <MonoStamp className="ml-2">days</MonoStamp>
-                </div>
-              </Link>
-            ))
-          )}
-        </section>
-
-        <section className="lg:col-span-5">
-          <div className="flex items-center justify-between border-b border-rule px-8 py-4">
-            <MonoStamp>Recent movement</MonoStamp>
           </div>
-          <div className="e-rule h-px w-full bg-rule" />
+          {stats ? <PipelineBar stats={stats} /> : null}
+        </Card>
 
-          {recent.length === 0 ? (
-            <div className="px-8 py-10">
-              <MonoStamp>No activity recorded</MonoStamp>
-            </div>
-          ) : (
-            recent.map((item) => (
+        <div className="grid gap-5 lg:grid-cols-5">
+          {/* Longest silence — the ranking that actually drives follow-ups. */}
+          <Card className="overflow-hidden lg:col-span-3">
+            <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4">
+              <h2 className="type-display text-lg">Waiting longest</h2>
               <Link
-                key={item.id}
-                to={`/app/applications/${item.id}`}
-                className="block border-b border-rule px-8 py-4 transition-colors hover:bg-paper-inset"
+                to="/app/applications"
+                className="inline-flex items-center gap-1 text-xs text-cyan hover:underline"
               >
-                <div className="flex items-center justify-between gap-4">
-                  <p className="truncate">{item.company_name}</p>
-                  <StatusBadge status={item.status} />
-                </div>
-                <MonoStamp className="mt-1 block">
-                  {formatStamp(item.updated_at)}
-                </MonoStamp>
+                View all <ArrowRight className="h-3 w-3" />
               </Link>
-            ))
-          )}
-        </section>
+            </div>
+
+            {waiting.length === 0 ? (
+              <EmptyState
+                title="Nothing is waiting"
+                body="Every application has been resolved — or you haven't added one yet."
+                action={
+                  <Link to="/app/new">
+                    <Button size="sm">Add your first</Button>
+                  </Link>
+                }
+              />
+            ) : (
+              <motion.div variants={staggerParent} initial="hidden" animate="show">
+                {waiting.slice(0, 5).map((item) => (
+                  <motion.div key={item.id} variants={staggerItem}>
+                    <Link
+                      to={`/app/applications/${item.id}`}
+                      className="flex items-center gap-4 border-b border-white/[0.05] px-5 py-4 transition-colors last:border-0 hover:bg-white/[0.04]"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{item.company_name}</p>
+                        <p className="truncate text-xs text-muted">{item.role}</p>
+                      </div>
+                      <StatusBadge status={item.status} />
+                      <DaysBadge days={daysSince(item.date_applied)} />
+                    </Link>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </Card>
+
+          <Card className="overflow-hidden lg:col-span-2">
+            <div className="border-b border-white/[0.07] px-5 py-4">
+              <h2 className="type-display text-lg">Recent activity</h2>
+            </div>
+
+            {recent.length === 0 ? (
+              <div className="px-5 py-10 text-center text-sm text-faint">Nothing yet</div>
+            ) : (
+              <motion.div variants={staggerParent} initial="hidden" animate="show">
+                {recent.map((item) => (
+                  <motion.div key={item.id} variants={staggerItem}>
+                    <Link
+                      to={`/app/applications/${item.id}`}
+                      className="block border-b border-white/[0.05] px-5 py-3.5 transition-colors last:border-0 hover:bg-white/[0.04]"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="truncate text-sm font-medium">{item.company_name}</p>
+                        <StatusBadge status={item.status} />
+                      </div>
+                      <p className="type-mono mt-1 text-[11px] text-faint">
+                        {formatStamp(item.updated_at)}
+                      </p>
+                    </Link>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </Card>
+        </div>
       </div>
-    </div>
+    </PageTransition>
   )
 }

@@ -3,12 +3,18 @@
 <br/>
 
 ```
- ██╗ ██████╗ ██████╗     ████████╗██████╗  █████╗  ██████╗██╗  ██╗███████╗██████╗ 
- ██║██╔═══██╗██╔══██╗    ╚══██╔══╝██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██╔════╝██╔══██╗
- ██║██║   ██║██████╔╝       ██║   ██████╔╝███████║██║     █████╔╝ █████╗  ██████╔╝
-██╗██║██╗ ██║██╔══██╗       ██║   ██╔══██╗██╔══██║██║     ██╔═██╗ ██╔══╝  ██╔══██╗
-╚█████╔╝╚█████╔╝██████╔╝       ██║   ██║  ██║██║  ██║╚██████╗██║  ██╗███████╗██║  ██║
- ╚════╝  ╚════╝ ╚═════╝        ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+ ██╗  ██╗██╗██████╗ ███████╗
+ ██║  ██║██║██╔══██╗██╔════╝
+ ███████║██║██████╔╝█████╗
+ ██╔══██║██║██╔══██╗██╔══╝
+ ██║  ██║██║██║  ██║███████╗
+ ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚══════╝
+ ██╗███╗   ██╗██╗   ██╗███████╗███╗   ██╗████████╗ ██████╗ ██████╗ ██╗   ██╗
+ ██║████╗  ██║██║   ██║██╔════╝████╗  ██║╚══██╔══╝██╔═══██╗██╔══██╗╚██╗ ██╔╝
+ ██║██╔██╗ ██║██║   ██║█████╗  ██╔██╗ ██║   ██║   ██║   ██║██████╔╝ ╚████╔╝
+ ██║██║╚██╗██║╚██╗ ██╔╝██╔══╝  ██║╚██╗██║   ██║   ██║   ██║██╔══██╗  ╚██╔╝
+ ██║██║ ╚████║ ╚████╔╝ ███████╗██║ ╚████║   ██║   ╚██████╔╝██║  ██║   ██║
+ ╚═╝╚═╝  ╚═══╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝   ╚═╝
 ```
 
 <br/>
@@ -108,7 +114,7 @@ change; you just don't get the email.
 ### Docker (everything, one command)
 
 ```bash
-cp .env.example .env          # then set JWT_SECRET_KEY and ANTHROPIC_API_KEY
+cp .env.example .env          # then set JWT_SECRET_KEY and GEMINI_API_KEY
 docker compose up --build
 ```
 
@@ -155,7 +161,7 @@ browser stays on one origin and the JWT never rides a cross-origin request.
 | `REDIS_URL` | yes | `redis://host:6379/0` |
 | `JWT_Secret_Key` | yes | signs the JWTs; 60-minute expiry |
 | `RABBITMQ_URL` | no | defaults to `guest@localhost`; publish fails open |
-| `ANTHROPIC_API_KEY` | for `/ai` | AI pages render but error without it |
+| `GEMINI_API_KEY` | for `/ai` | AI pages render but error without it — free key: https://aistudio.google.com/apikey |
 | `EMAILS_ENABLED` | no | `False` prints the email to the console instead of sending |
 
 ---

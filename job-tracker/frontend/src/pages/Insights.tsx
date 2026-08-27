@@ -1,44 +1,44 @@
+import { BarChart3, FileText, MessagesSquare, Sparkles } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useState, type FormEvent } from 'react'
 import { useApplications } from '@/hooks/useApplications'
 import { ai } from '@/services/api'
 import {
-  AirmailEdge,
   Button,
+  Card,
   ErrorNote,
   Field,
   Input,
-  MonoStamp,
+  PageHeader,
+  PageTransition,
   Select,
   Spinner,
 } from '@/components/ui'
+import { cn } from '@/lib/utils'
 
 type Mode = 'analyze' | 'cover' | 'prep'
 
-const MODES: { id: Mode; label: string; caption: string }[] = [
+const MODES = [
   {
-    id: 'analyze',
+    id: 'analyze' as const,
     label: 'Analyse history',
+    icon: BarChart3,
     caption: 'Reads every application you have logged and describes the pattern.',
   },
   {
-    id: 'cover',
+    id: 'cover' as const,
     label: 'Cover letter',
-    caption: 'Drafts a letter for one company and role.',
+    icon: FileText,
+    caption: 'Drafts a tailored letter for one company and role.',
   },
   {
-    id: 'prep',
+    id: 'prep' as const,
     label: 'Interview prep',
-    caption: 'Prepares for one application, or any company and role.',
+    icon: MessagesSquare,
+    caption: 'Prepares you for a specific application in your list.',
   },
 ]
 
-/**
- * Composition: the reply.
- *
- * Three modes switch inside one panel that never resizes between them —
- * holding the fixed-camera rule. As three separate cards the "one channel,
- * three kinds of letter" idea is lost and it becomes a tool menu.
- */
 export function Insights() {
   const { items } = useApplications()
   const [mode, setMode] = useState<Mode>('analyze')
@@ -82,9 +82,7 @@ export function Insights() {
         setMeta(`${result.company_name} · ${result.role}`)
       }
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : 'The request did not complete.'
-      )
+      setError(cause instanceof Error ? cause.message : 'The request did not complete.')
     } finally {
       setBusy(false)
     }
@@ -94,127 +92,175 @@ export function Insights() {
     mode === 'analyze'
       ? items.length > 0
       : mode === 'cover'
-        ? cover.company_name.trim() && cover.role.trim() && cover.skills.trim()
+        ? Boolean(cover.company_name.trim() && cover.role.trim() && cover.skills.trim())
         : Boolean(prepId)
 
+  const active = MODES.find((m) => m.id === mode)
+
   return (
-    <div>
-      {/* Mode strip. */}
-      <div className="e-cut flex flex-wrap border-b border-rule">
-        {MODES.map((item, index) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => switchMode(item.id)}
-            className={[
-              'type-mono px-8 py-4 transition-colors',
-              index > 0 ? 'border-l border-rule' : '',
-              mode === item.id
-                ? 'bg-ink text-paper'
-                : 'text-muted hover:text-ink',
-            ].join(' ')}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+    <PageTransition>
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Powered by Gemini"
+          title={
+            <>
+              AI <span className="grad-text">insights</span>
+            </>
+          }
+        />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12">
-        <section className="border-rule lg:col-span-5 lg:border-r">
-          <form onSubmit={run} className="space-y-8 p-8">
-            <div>
-              <MonoStamp>{MODES.find((m) => m.id === mode)?.caption}</MonoStamp>
-            </div>
-
-            {mode === 'cover' ? (
-              <>
-                <Field label="Company">
-                  <Input
-                    value={cover.company_name}
-                    onChange={(event) =>
-                      setCover((c) => ({ ...c, company_name: event.target.value }))
-                    }
-                    required
+        {/* Mode selector */}
+        <div className="grid gap-3 sm:grid-cols-3">
+          {MODES.map((item) => {
+            const Icon = item.icon
+            const selected = mode === item.id
+            return (
+              <motion.button
+                key={item.id}
+                type="button"
+                onClick={() => switchMode(item.id)}
+                whileHover={{ y: -3 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+                className={cn(
+                  'glass relative overflow-hidden rounded-2xl p-5 text-left transition-colors',
+                  selected ? 'border-cyan/40 bg-cyan/[0.07]' : 'hover:bg-white/[0.07]'
+                )}
+              >
+                {selected ? (
+                  <motion.span
+                    layoutId="mode-glow"
+                    className="grad-primary pointer-events-none absolute inset-x-0 top-0 h-0.5"
                   />
-                </Field>
-                <Field label="Role">
-                  <Input
-                    value={cover.role}
-                    onChange={(event) =>
-                      setCover((c) => ({ ...c, role: event.target.value }))
-                    }
-                    required
-                  />
-                </Field>
-                <Field label="Skills" hint="Comma separated, or a short paragraph">
-                  <Input
-                    value={cover.skills}
-                    onChange={(event) =>
-                      setCover((c) => ({ ...c, skills: event.target.value }))
-                    }
-                    required
-                  />
-                </Field>
-              </>
-            ) : null}
+                ) : null}
+                <Icon className={cn('h-5 w-5', selected ? 'text-cyan' : 'text-muted')} />
+                <p className="mt-3 font-medium">{item.label}</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted">{item.caption}</p>
+              </motion.button>
+            )
+          })}
+        </div>
 
-            {mode === 'prep' ? (
-              <Field label="Application">
-                <Select
-                  value={prepId}
-                  onChange={(event) => setPrepId(event.target.value)}
-                  required
-                >
-                  <option value="">Choose one…</option>
-                  {items.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.company_name} — {item.role}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-            ) : null}
+        <div className="grid gap-5 lg:grid-cols-5">
+          {/* Input side */}
+          <Card className="p-6 lg:col-span-2">
+            <form onSubmit={run} className="space-y-5">
+              {mode === 'cover' ? (
+                <>
+                  <Field label="Company">
+                    <Input
+                      value={cover.company_name}
+                      onChange={(event) =>
+                        setCover((c) => ({ ...c, company_name: event.target.value }))
+                      }
+                      placeholder="Cloudflare"
+                      required
+                    />
+                  </Field>
+                  <Field label="Role">
+                    <Input
+                      value={cover.role}
+                      onChange={(event) => setCover((c) => ({ ...c, role: event.target.value }))}
+                      placeholder="Software Engineer"
+                      required
+                    />
+                  </Field>
+                  <Field label="Your skills" hint="Comma separated, or a short paragraph">
+                    <Input
+                      value={cover.skills}
+                      onChange={(event) => setCover((c) => ({ ...c, skills: event.target.value }))}
+                      placeholder="FastAPI, Redis, React…"
+                      required
+                    />
+                  </Field>
+                </>
+              ) : null}
 
-            {mode === 'analyze' && items.length === 0 ? (
-              <p className="text-muted">
-                There is nothing to analyse yet. Add an application first.
+              {mode === 'prep' ? (
+                <Field label="Application">
+                  <Select
+                    value={prepId}
+                    onChange={(event) => setPrepId(event.target.value)}
+                    required
+                  >
+                    <option value="">Choose one…</option>
+                    {items.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.company_name} — {item.role}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              ) : null}
+
+              {mode === 'analyze' ? (
+                <p className="text-sm leading-relaxed text-muted">
+                  {items.length === 0
+                    ? 'There is nothing to analyse yet. Add an application first.'
+                    : `Gemini will read all ${items.length} of your applications and describe what is actually happening in your search.`}
+                </p>
+              ) : null}
+
+              <Button type="submit" size="lg" className="w-full" disabled={busy || !canSubmit}>
+                <Sparkles className="h-4 w-4" />
+                {busy ? 'Thinking…' : 'Generate'}
+              </Button>
+
+              <p className="text-center text-xs text-faint">
+                Shared budget: 10 AI requests per hour.
               </p>
-            ) : null}
+            </form>
+          </Card>
 
-            <Button type="submit" size="lg" disabled={busy || !canSubmit}>
-              {busy ? 'Writing…' : 'Request'}
-            </Button>
-
-            <p className="type-mono text-muted">
-              Shared budget: 10 AI requests per hour across all three modes.
-            </p>
-          </form>
-        </section>
-
-        {/* The reply panel. Fixed min-height so switching modes never resizes
-            the frame — this is the page's fixed-camera rule. */}
-        <section className="lg:col-span-7">
-          <div className="p-8">
-            <AirmailEdge />
-            <div className="e-rule mt-0 min-h-[60vh] border border-t-0 border-rule bg-paper-inset p-8">
+          {/* Output side — fixed min height so switching modes doesn't jump. */}
+          <Card className="min-h-[26rem] p-6 lg:col-span-3">
+            <AnimatePresence mode="wait">
               {busy ? (
-                <Spinner label="Waiting for the reply" />
+                <motion.div
+                  key="busy"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex h-full min-h-[22rem] items-center justify-center"
+                >
+                  <Spinner label="Gemini is reading…" />
+                </motion.div>
               ) : error ? (
-                <ErrorNote>{error}</ErrorNote>
+                <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <ErrorNote>{error}</ErrorNote>
+                </motion.div>
               ) : output ? (
-                <div className="e-hold">
-                  {meta ? <MonoStamp>{meta}</MonoStamp> : null}
-                  <p className="mt-6 whitespace-pre-wrap leading-relaxed">
+                <motion.div
+                  key="output"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  {meta ? (
+                    <p className="mb-4 text-xs tracking-wide text-cyan uppercase">{meta}</p>
+                  ) : null}
+                  <div className="text-sm leading-relaxed whitespace-pre-wrap text-ink/90">
                     {output}
-                  </p>
-                </div>
+                  </div>
+                </motion.div>
               ) : (
-                <MonoStamp>Nothing requested yet</MonoStamp>
+                <motion.div
+                  key="idle"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex h-full min-h-[22rem] flex-col items-center justify-center text-center"
+                >
+                  <div className="glass-subtle mb-4 flex h-14 w-14 items-center justify-center rounded-2xl">
+                    <Sparkles className="h-6 w-6 text-cyan" />
+                  </div>
+                  <p className="font-medium">{active?.label}</p>
+                  <p className="mt-1 max-w-xs text-sm text-muted">{active?.caption}</p>
+                </motion.div>
               )}
-            </div>
-          </div>
-        </section>
+            </AnimatePresence>
+          </Card>
+        </div>
       </div>
-    </div>
+    </PageTransition>
   )
 }

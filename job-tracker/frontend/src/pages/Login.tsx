@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { Button, ErrorNote, Field, Input, MonoStamp } from '@/components/ui'
-import { Threshold } from './Threshold'
+import { Button, ErrorNote, Field, Input } from '@/components/ui'
+import { AuthLayout } from './AuthLayout'
 
 export function Login() {
   const { login, loading } = useAuth()
@@ -26,20 +26,28 @@ export function Login() {
   }
 
   return (
-    <Threshold caption="Sign in to continue the record.">
-      <form onSubmit={onSubmit} className="space-y-8">
-        <div>
-          <MonoStamp>Job Tracker</MonoStamp>
-          <h1 className="type-display-l mt-3">Sign in</h1>
-        </div>
-
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Sign in to pick up where your search left off."
+      footer={
+        <>
+          No account yet?{' '}
+          <Link to="/register" className="font-medium text-cyan hover:underline">
+            Create one
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={onSubmit} className="space-y-5">
         <Field label="Email">
           <Input
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@example.com"
             autoComplete="email"
             required
+            autoFocus
           />
         </Field>
 
@@ -48,6 +56,7 @@ export function Login() {
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            placeholder="••••••••"
             autoComplete="current-password"
             required
           />
@@ -58,14 +67,7 @@ export function Login() {
         <Button type="submit" size="lg" className="w-full" disabled={loading}>
           {loading ? 'Signing in…' : 'Sign in'}
         </Button>
-
-        <p className="type-mono text-muted">
-          No account?{' '}
-          <Link to="/register" className="text-ink underline">
-            Register
-          </Link>
-        </p>
       </form>
-    </Threshold>
+    </AuthLayout>
   )
 }

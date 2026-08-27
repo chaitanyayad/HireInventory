@@ -1,31 +1,48 @@
 from datetime import date
 
-import anthropic
 from fastapi import HTTPException, status
+from google import genai
+from google.genai import types as genai_types
 
 from app.config import settings
 from app.models.application import JobApplication
 
-# Built lazily rather than at import time. Constructing the client with no key
-# raises a TypeError deep inside the SDK, which surfaced as a bodyless HTTP 500
-# with no hint that the cause was configuration. Now a missing key is caught
-# before any request is attempted and reported as a 503 the UI can display.
-_client: anthropic.Anthropic | None = None
+# Built lazily rather than at import time: constructing it with no key
+# should fail as a clean 503 the UI can display, not an opaque 500 the
+# first time someone hits /ai.
+_client: genai.Client | None = None
 
 
-def get_client() -> anthropic.Anthropic:
+def get_client() -> genai.Client:
     global _client
-    if not settings.ANTHROPIC_API_KEY:
+    if not settings.GEMINI_API_KEY:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=(
-                "ANTHROPIC_API_KEY is not configured, so the AI features are "
+                "GEMINI_API_KEY is not configured, so the AI features are "
                 "unavailable. Set it in the environment and restart the API."
             ),
         )
     if _client is None:
-        _client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+        _client = genai.Client(api_key=settings.GEMINI_API_KEY)
     return _client
+
+
+def _generate(prompt: str, max_output_tokens: int) -> str:
+    response = get_client().models.generate_content(
+        model=settings.GEMINI_MODEL,
+        contents=prompt,
+        config=genai_types.GenerateContentConfig(
+            max_output_tokens=max_output_tokens,
+            # These are plain single-turn generations, not problems that need
+            # chain-of-thought — without this, "thinking" tokens (invisible
+            # reasoning that comes out of the same max_output_tokens budget)
+            # can eat most of the budget and truncate the actual answer.
+            thinking_config=genai_types.ThinkingConfig(thinking_budget=0),
+        ),
+    )
+    return response.text
+
 
 NO_DATA_MESSAGE = (
     "You don't have any applications logged yet — add a few so there's "
@@ -34,7 +51,7 @@ NO_DATA_MESSAGE = (
 
 
 def _summarize_applications(applications: list[JobApplication]) -> str:
-    # Send Claude a compact, structured summary instead of raw ORM objects —
+    # Send the model a compact, structured summary instead of raw ORM objects —
     # cheaper on tokens and keeps the prompt free of things it doesn't need
     # (ids, timestamps we don't care about).
     lines = []
@@ -64,12 +81,7 @@ def analyze_applications(applications: list[JobApplication]) -> str:
     if not applications:
         return NO_DATA_MESSAGE
 
-    response = get_client().messages.create(
-        model=settings.CLAUDE_MODEL,
-        max_tokens=1000,
-        messages=[{"role": "user", "content": _build_prompt(applications)}],
-    )
-    return response.content[0].text
+    return _generate(_build_prompt(applications), max_output_tokens=1000)
 
 
 def _build_cover_letter_prompt(company_name: str, role: str, skills: str) -> str:
@@ -82,14 +94,8 @@ def _build_cover_letter_prompt(company_name: str, role: str, skills: str) -> str
 
 
 def generate_cover_letter(company_name: str, role: str, skills: str) -> str:
-    response = get_client().messages.create(
-        model=settings.CLAUDE_MODEL,
-        max_tokens=600,
-        messages=[
-            {"role": "user", "content": _build_cover_letter_prompt(company_name, role, skills)}
-        ],
-    )
-    return response.content[0].text
+    prompt = _build_cover_letter_prompt(company_name, role, skills)
+    return _generate(prompt, max_output_tokens=600)
 
 
 def _build_interview_prep_prompt(
@@ -99,8 +105,8 @@ def _build_interview_prep_prompt(
     notes: str | None = None,
 ) -> str:
     # status/notes are only present when the request pointed at a saved
-    # application — they let Claude aim the prep at the round that's actually
-    # coming up instead of giving generic advice.
+    # application — they let the model aim the prep at the round that's
+    # actually coming up instead of giving generic advice.
     context = ""
     if status:
         context += f"\nI'm currently at the '{status}' stage of this application."
@@ -125,14 +131,5 @@ def generate_interview_prep(
     status: str | None = None,
     notes: str | None = None,
 ) -> str:
-    response = get_client().messages.create(
-        model=settings.CLAUDE_MODEL,
-        max_tokens=1500,
-        messages=[
-            {
-                "role": "user",
-                "content": _build_interview_prep_prompt(company_name, role, status, notes),
-            }
-        ],
-    )
-    return response.content[0].text
+    prompt = _build_interview_prep_prompt(company_name, role, status, notes)
+    return _generate(prompt, max_output_tokens=1500)
